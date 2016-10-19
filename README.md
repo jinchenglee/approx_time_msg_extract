@@ -15,11 +15,12 @@ catkin_ws
    ├──  build
    
    └──  src
-   
-        └── approx_time_msg_extract     <= this repository
+      
+          └── approx_time_msg_extract     <= this repository
 
 Then, 
 > cd catkin_ws
+
 > catkin_make
 
 ----------------------
