@@ -11,20 +11,43 @@ import numpy as np
 import cv2
 from cv_bridge import CvBridge
 
-import h5py
-import pickle
-import gzip
+import tables
 
 bridge = CvBridge()
-dataset = []
+count = 0
+img_sec_list = []
+img_nsec_list = []
+steering_angle_list = []
+avg_speed_list = []
 
 def callback(image, steering_rpt, speed_rpt):
-    global dataset
+    global count
+    global f 
+    global filters 
+    global f_img_sec
+    global f_img_nsec
+    global f_steering_angle
+    global f_avg_speed
+    global img_sec_list
+    global img_nsec_list
+    global steering_angle_list
+    global avg_speed_list
+
+    # Ave speed
     avg_speed = (speed_rpt.front_left + speed_rpt.front_right + speed_rpt.rear_left + speed_rpt.rear_right)/4
 
     # Timestamp info
     img_sec = image.header.stamp.secs
     img_nsec = image.header.stamp.nsecs
+
+    # Steering angle
+    steering_angle = steering_rpt.steering_wheel_angle
+
+    # Save to list
+    img_sec_list.append(img_sec)
+    img_nsec_list.append(img_nsec)
+    steering_angle_list.append(steering_angle)
+    avg_speed_list.append(avg_speed)
 
     ## Get image from message packet
     #cv_img = bridge.imgmsg_to_cv2(image, desired_encoding="passthrough")
@@ -48,38 +71,25 @@ def callback(image, steering_rpt, speed_rpt):
     #cv2.imwrite(os.path.join(args.output_dir, "frame%06i.png" % count), cv_img_cropped_grayscale)
     #cv2.imwrite(file_name, cv_img_cropped_grayscale)
 
-    # Steering angle
-    steering_angle = steering_rpt.steering_wheel_angle
-
-    print("steering time stamp: ", steering_rpt.header.stamp)
-    #print("steering angle: ", steering_angle)
-    #print("Average speed: ", avg_speed)
-
     # Record dataset
-    tmp = [img_sec, img_nsec, steering_angle, avg_speed]
-    dataset.append(tmp)
- 
+    count += 1
+
+    if count%1000 == 0:
+        print("Time stamp: ", img_sec, img_nsec, "count: ", count)
+        f_img_sec.append(img_sec_list)
+        f_img_nsec.append(img_nsec_list)
+        f_steering_angle.append(steering_angle_list)
+        f_avg_speed.append(avg_speed_list)
+        img_sec_list = []
+        img_nsec_list = []
+        steering_angle_list = []
+        avg_speed_list = []
+
+
 
 def my_shutdown_hook():
     global dataset
     print("in my_shutdown_hook")
-    #pickle.dump(dataset, gzip.open("approx_timed_dataset.p","wb"))
-
-    # HDF5 file preparation
-    dataset_size = len(dataset)
-    #f = h5py.File('approx_time_dataset.hdf5','w')
-    #f_time = f.create_dataset('time_stamp', (dataset_size,2), maxshape=(None,2))
-    #f_center_camera = f.create_dataset('center_camera', (dataset_size,480,640,3), maxshape=(None,480,640,3), compression="gzip")
-    #f_steering_angle = f.create_dataset('steering_angle', (dataset_size,), maxshape=(None,))
-    #f_avg_speed = f.create_dataset('avg_speed', (dataset_size,), maxshape=(None,))
-    #f['/time_stamp'][:,0] = dataset[:][0]
-    #f['/time_stamp'][:,1] = dataset[:][1]
-    #f['/steering_angle'] = dataset[:][3]
-    #f['/avg_speed'] = dataset[:][4]
-
-    #f.close()
-
-
 
 # Initialize ROS node
 rospy.init_node('image_extract_node', anonymous=True)
@@ -89,6 +99,16 @@ image_sub = message_filters.Subscriber('/center_camera/image_color', Image)
 steering_rpt_sub = message_filters.Subscriber('/vehicle/steering_report', SteeringReport)
 speed_rpt_sub = message_filters.Subscriber('/vehicle/wheel_speed_report', WheelSpeedReport)
 
+# PyTable file
+hdf5_path = "approx_timed_time_steering_speed.hdf5"
+f = tables.open_file(hdf5_path,'w')
+filters = tables.Filters(complevel=5, complib='blosc')
+f_img_sec = f.create_earray(f.root, 'img_sec', tables.Atom.from_dtype(np.dtype('int')), shape=(0,), filters=filters)
+f_img_nsec = f.create_earray(f.root, 'img_nsec', tables.Atom.from_dtype(np.dtype('int')), shape=(0,), filters=filters)
+f_steering_angle = f.create_earray(f.root, 'steering_angle', tables.Atom.from_dtype(np.dtype('float')), shape=(0,), filters=filters)
+f_avg_speed = f.create_earray(f.root, 'avg_speed', tables.Atom.from_dtype(np.dtype('float')), shape=(0,), filters=filters)
+
+
 while not rospy.is_shutdown():
     # Approximate time synchronizing
     ts = message_filters.ApproximateTimeSynchronizer([image_sub, steering_rpt_sub, speed_rpt_sub], 1000, 0.5)
@@ -96,7 +116,16 @@ while not rospy.is_shutdown():
 
     rospy.spin()
 
-pickle.dump(dataset, gzip.open("approx_timed_dataset.p","wb"))
-#print(dataset[5])
+print("Exiting... Total count: ", count)
+f_img_sec.append(img_sec_list)
+f_img_nsec.append(img_nsec_list)
+f_steering_angle.append(steering_angle_list)
+f_avg_speed.append(avg_speed_list)
+img_sec_list = []
+img_nsec_list = []
+steering_angle_list = []
+avg_speed_list = []
+
+f.close()
 
 rospy.on_shutdown(my_shutdown_hook)
