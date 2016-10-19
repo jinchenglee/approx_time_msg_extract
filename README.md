@@ -35,4 +35,4 @@ How to run the script?
     > rosrun approx_time_msg_extract approx_time_msg.py
 
 If everything works fine, using > rqt_graph should show a connect diagram like below. 
-![alt tag](https://raw.githubusercontent.com/username/projectname/branch/path/to/ros_play_extract_conn.png)
+![alt tag](https://github.com/jinchenglee/approx_time_msg_extract/blob/master/ros_play_extract_conn.png)
