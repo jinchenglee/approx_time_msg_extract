@@ -9,6 +9,7 @@ First, follow this tutorial: http://wiki.ros.org/ROS/Tutorials/catkin/CreatingPa
 You should have your catkin workspace similar like this:
 
 catkin_ws
+   
    ├──  devel
    
    ├──  build
