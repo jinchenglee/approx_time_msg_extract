@@ -19,9 +19,9 @@ catkin_ws
           └── approx_time_msg_extract     <= this repository
 
 Then, 
-> cd catkin_ws
+  > cd catkin_ws
 
-> catkin_make
+  > catkin_make
 
 ----------------------
 How to run the script?
@@ -31,7 +31,7 @@ How to run the script?
     > roscore
 
 2. Play back a .bag file.
-    > rosbag play <file>.bag
+    > rosbag play foo.bag
 
 3. In yet another terminal, start recording on certain messages we care. 
     > rosbag record /fwd_center_camera /fwd_steering_rpt /fwd_wheel_speed_rpt
