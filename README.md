@@ -10,8 +10,11 @@ You should have your catkin workspace similar like this:
 
 catkin_ws
    ├──  devel
+   
    ├──  build
+   
    └──  src
+   
         └── approx_time_msg_extract     <= this repository
 
 Then, 
