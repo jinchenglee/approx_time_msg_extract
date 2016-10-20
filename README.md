@@ -41,3 +41,13 @@ How to run the script?
 
 If everything works fine, using > rqt_graph should show a connect diagram like below. 
 ![alt tag](https://github.com/jinchenglee/approx_time_msg_extract/blob/master/ros_play_extract_conn.png)
+
+----------------------
+Convert the time-sync'ed .bag file to PyTables hdf5 file
+----------------------
+This bag2hdf5.py script is stand-alone, not required to be part of this ROS package. But it is very specifically written to extract the "/fwd_center_camera /fwd_steering_rpt /fwd_wheel_speed_rpt" topics though. 
+
+> python bag2hdf5.py file.bag
+
+
+
